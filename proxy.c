@@ -46,6 +46,10 @@ void * requestHandler(void * data){
 	char responseBuffer[MAXBUF];
 	char hostname[MAXLINE];
 	char pathname[MAXLINE];
+	char URI[MAXLINE];
+	char method[5];
+
+	int clientid;
 
 
 	memset(requestBuffer,0,sizeof(requestBuffer));
@@ -55,9 +59,25 @@ void * requestHandler(void * data){
 
 	 rio_readinitb(&rio_client, data);
 	 rio_readlineb(&rio_client, requestBuffer, MAXLINE);
-	 parse_uri(requestBuffer,hostname,pathname,80);
+
+
+	 sscanf(requestBuffer, "%s %s", method, URI);
+
+	 int *port=80;
+
+
+	 parse_uri(URI,hostname,pathname,port);
+
 	 printf("HTTP request from browser: %s\n", requestBuffer);
 	 printf("Hostname: %s\n", hostname);
+	 printf("PathName: %s\n", pathname);
+
+	 clientid=open_clientfd(hostname,80);
+
+	 rio_writen(&clientid,hostname,MAXLINE);
+	 rio_readlineb(&clientid, responseBuffer, MAXLINE);
+	 Rio_writen(&rio_client,responseBuffer,MAXBUF);
+
 
 	 /*	 while(1){
 
@@ -195,11 +215,11 @@ int parse_uri(char *uri, char *hostname, char *pathname, int *port)
     strncpy(hostname, hostbegin, len);
     hostname[len] = '\0';
     
-    /* Extract the port number */
-    *port = 80; /* default */
+    /* Extract the port number
+    *port = 80;  default
     if (*hostend == ':')   
 	*port = atoi(hostend + 1);
-    
+    */
     /* Extract the path */
     pathbegin = strchr(hostbegin, '/');
     if (pathbegin == NULL) {
